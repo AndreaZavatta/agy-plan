@@ -32,7 +32,7 @@ Tell the user that Gemini is planning, then wait for the completion notification
 The script prints one JSON object:
 
 - `ok: false`: report `error` to the user and stop. Do not write the plan yourself as a fallback, since the user asked for Gemini to plan.
-- `ok: true`: continue with `plan_path`, `model`, `attempts`, `duration_seconds`, `usage` and `worktree_changed`.
+- `ok: true`: continue with `plan_path`, `model`, `attempts`, `duration_seconds`, `usage`, `worktree_changed` and `blocked_files`.
 
 After a refinement the JSON also has `resumed`. If it is false, agy could not resume the original Gemini conversation and started a new one, so tell the user that Gemini revised the plan from the file without its earlier exploration.
 
@@ -40,7 +40,7 @@ If `worktree_changed` is true, tell the user that the repository's `git status` 
 
 ## 2. Human review
 
-Do not read the plan yet, and never paste it into the chat. Give the user the absolute `plan_path`, plus the model, duration and token usage in one line. Say they can edit the file directly.
+Do not read the plan yet, and never paste it into the chat. Give the user the absolute `plan_path`, plus the model, duration, token usage and how many `.env` files Gemini was blocked from reading (`blocked_files`) in one line. Say they can edit the file directly.
 
 Then ask with AskUserQuestion:
 

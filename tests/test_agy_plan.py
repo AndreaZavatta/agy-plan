@@ -82,6 +82,17 @@ class AgyPlanTest(unittest.TestCase):
         deny = json.loads(argv[argv.index("--settings") + 1])["permissions"]["deny"]
         self.assertEqual(set(deny), {"write_file(*)", "command(*)", "mcp(*)"})
 
+    def test_blocks_reading_env_files_but_not_templates(self):
+        for path in [".env", ".env.local", "backend/.env", "backend/.env.example", "node_modules/pkg/.env"]:
+            (self.project / path).parent.mkdir(parents=True, exist_ok=True)
+            (self.project / path).write_text("KEY=value")
+        _, out = self.run_script([result("cut short"), result(plan("# Done"))], "--task-file", "-")
+        self.assertEqual(out["blocked_files"], [".env", ".env.local", "backend/.env"])
+        for argv in self.calls():
+            deny = json.loads(argv[argv.index("--settings") + 1])["permissions"]["deny"]
+            self.assertEqual(set(deny), {"write_file(*)", "command(*)", "mcp(*)", "read_file(.env)",
+                                         "read_file(.env.local)", "read_file(backend/.env)"})
+
     def test_every_call_is_read_only_including_retries(self):
         self.run_script([result("cut short"), result(plan("# Done"))], "--task-file", "-")
         self.assertTrue(all("--settings" in argv for argv in self.calls()))

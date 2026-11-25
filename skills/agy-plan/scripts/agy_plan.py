@@ -24,7 +24,11 @@ END = "<<<AGY_PLAN_END>>>"
 PROMPT_TEMPLATE = Path(__file__).resolve().parent.parent / "references" / "planner-prompt.md"
 # --mode plan only guides the model and does not stop it from writing to the project,
 # so read-only is enforced with session-scoped deny rules.
-READ_ONLY_SETTINGS = json.dumps({"permissions": {"deny": ["write_file(*)", "command(*)", "mcp(*)"]}})
+READ_ONLY_DENY = ["write_file(*)", "command(*)", "mcp(*)"]
+# agy's read_file rules match exact paths and directories but not globs (tested with agy
+# 1.5.17), so every secrets file found in the project gets a rule of its own.
+ENV_TEMPLATES = {".env.example", ".env.sample", ".env.template", ".env.dist"}
+SKIPPED_DIRS = {".git", "node_modules"}
 
 # agy reports SUCCESS even when a denied tool call cut the turn short, so a run only
 # counts once the end marker is present. These prompts resume such a run.
@@ -50,8 +54,23 @@ class PlanError(Exception):
         self.conversation_id = conversation_id
 
 
-def run_agy(prompt, project, model, timeout, conversation_id=None):
-    cmd = ["agy", "-p", prompt, "--mode", "plan", "--settings", READ_ONLY_SETTINGS, "--model", model,
+def find_env_files(project):
+    """Return the project's .env files, such as .env and backend/.env.local, but not templates like .env.example."""
+    found = []
+    for root, dirs, files in os.walk(project):
+        dirs[:] = [d for d in dirs if d not in SKIPPED_DIRS]
+        found += [Path(root, name).relative_to(project).as_posix() for name in files
+                  if (name == ".env" or name.startswith(".env.")) and name not in ENV_TEMPLATES]
+    return sorted(found)
+
+
+def read_only_settings(blocked_files):
+    deny = READ_ONLY_DENY + [f"read_file({path})" for path in blocked_files]
+    return json.dumps({"permissions": {"deny": deny}})
+
+
+def run_agy(prompt, project, model, timeout, settings, conversation_id=None):
+    cmd = ["agy", "-p", prompt, "--mode", "plan", "--settings", settings, "--model", model,
            "--output-format", "json", "--print-timeout", f"{timeout}s"]
     if conversation_id:
         cmd += ["--conversation", conversation_id]
@@ -93,8 +112,11 @@ def relativize_links(plan, project):
 def plan_session(prompt, project, model, timeout, conversation_id=None):
     """Run agy until it delivers a complete plan, resuming a cut-off turn up to MAX_RETRIES times."""
     usage, denied, total_seconds = {}, [], 0.0
+    # Found once, so retries of the same session block the same files.
+    blocked_files = find_env_files(project)
+    settings = read_only_settings(blocked_files)
     for attempt in range(1, MAX_RETRIES + 2):
-        result = run_agy(prompt, project, model, timeout, conversation_id)
+        result = run_agy(prompt, project, model, timeout, settings, conversation_id)
         conversation_id = result.get("conversation_id") or conversation_id
         total_seconds += result.get("duration_seconds") or 0
         denied += result.get("denied_actions") or []
@@ -104,7 +126,7 @@ def plan_session(prompt, project, model, timeout, conversation_id=None):
         if plan:
             return {"plan": relativize_links(plan, project), "conversation_id": conversation_id,
                     "usage": usage, "denied_actions": denied, "attempts": attempt,
-                    "duration_seconds": round(total_seconds, 1)}
+                    "duration_seconds": round(total_seconds, 1), "blocked_files": blocked_files}
         prompt = RETRY_PROMPT
     raise PlanError(f"no complete plan after {MAX_RETRIES + 1} attempts (denied actions: {denied})", conversation_id)
 

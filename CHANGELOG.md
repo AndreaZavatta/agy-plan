@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Gemini is blocked from reading the project's `.env` files, with one exact `read_file` deny rule per file because agy ignores glob patterns in these rules. Templates such as `.env.example` stay readable, and the JSON summary lists the blocked files in `blocked_files`.
+
 ### Changed
 
 - Project instructions such as `CLAUDE.md` take precedence over the plan on workflow, branches, commits, tickets and verification commands, and their preliminary steps run before planning.
