@@ -40,7 +40,7 @@ If `worktree_changed` is true, tell the user that the repository's `git status` 
 
 ## 2. Human review
 
-Do not read the plan yet, and never paste it into the chat. Give the user the absolute `plan_path`, plus the model, duration, token usage and how many `.env` files Gemini was blocked from reading (`blocked_files`) in one line. Say they can edit the file directly.
+Do not read the plan yet, and never paste it into the chat. Give the user the absolute `plan_path`, plus the model, duration, token usage and how many secrets files Gemini was blocked from reading (`blocked_files`) in one line. Say they can edit the file directly.
 
 Then ask with AskUserQuestion:
 

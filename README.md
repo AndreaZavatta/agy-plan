@@ -61,7 +61,7 @@ Each refinement writes a new file with the first free version number (`-v2`, `-v
 
 With these rules, creating and editing files (including from a subagent) and running terminal commands were blocked. Read tools and network tools, such as web search and URL fetching, remain available.
 
-Gemini is also blocked from reading `.env` files, which usually hold secrets. In testing with agy 1.5.17, `read_file` deny rules matched exact paths and directories but ignored glob patterns such as `**/.env` or `.env*`. So before each session the script finds every `.env` and `.env.*` file in the project and adds one rule per file, such as `read_file(backend/.env)`. It skips `.git` and `node_modules`, and templates (`.env.example`, `.env.sample`, `.env.template`, `.env.dist`) stay readable, so Gemini can still learn variable names. The JSON summary lists the blocked files in `blocked_files`. Other secrets, such as key files or credentials in other formats, are not blocked: keep them out of the project or use development credentials. As an extra check, the script compares `git status` before and after the session and reports any difference. In projects that are not git repositories this check is skipped, leaving only the deny rules.
+Gemini is also blocked from reading files that usually hold secrets: `.env` and `.env.*`, `.envrc` (direnv), `.npmrc`, `.pypirc`, `.netrc`, and keys and certificates ending in `.pem` or `.key`. In testing with agy 1.5.17, `read_file` deny rules matched exact paths and directories but ignored glob patterns such as `**/.env` or `.env*`. So before each session the script finds every such file in the project and adds one rule per file, such as `read_file(backend/.env)`. It skips `.git` and `node_modules`, and templates (`.env.example`, `.env.sample`, `.env.template`, `.env.dist`) stay readable, so Gemini can still learn variable names. The JSON summary lists the blocked files in `blocked_files`. Secrets in other files, such as credentials in a JSON or YAML config, are not blocked: keep them out of the project or use development credentials. As an extra check, the script compares `git status` before and after the session and reports any difference. In projects that are not git repositories this check is skipped, leaving only the deny rules.
 
 > [!WARNING]
 > Because network tools stay available, a malicious file in the repository could try to instruct Gemini (prompt injection) to send code to an external URL. The planner prompt tells Gemini to treat repository content as data and ignore such instructions, but that is not a guarantee. Only run `/agy-plan` on repositories whose content you trust, or that you could share anyway.
@@ -145,6 +145,12 @@ python3 -m unittest discover -s tests
 
 The tests use a stub `agy`, so they need no network access or Gemini quota.
 
+## Security
+
+To report a vulnerability, see [SECURITY.md](SECURITY.md).
+
 ## License
 
 [MIT](LICENSE)
+
+agy-plan is an independent project, not affiliated with or endorsed by Google or Anthropic. Gemini and Antigravity are trademarks of Google LLC; Claude and Claude Code are trademarks of Anthropic, PBC.

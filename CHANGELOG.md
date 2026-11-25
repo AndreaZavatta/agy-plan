@@ -2,11 +2,12 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-11-25
 
 ### Added
 
-- Gemini is blocked from reading the project's `.env` files, with one exact `read_file` deny rule per file because agy ignores glob patterns in these rules. Templates such as `.env.example` stay readable, and the JSON summary lists the blocked files in `blocked_files`.
+- Gemini is blocked from reading the project's secrets files (`.env`, `.env.*`, `.envrc`, `.npmrc`, `.pypirc`, `.netrc`, `*.pem`, `*.key`), with one exact `read_file` deny rule per file because agy ignores glob patterns in these rules. Templates such as `.env.example` stay readable, and the JSON summary lists the blocked files in `blocked_files`.
+- `SECURITY.md`, explaining how to report a vulnerability, and a note in the README that the project is not affiliated with Google or Anthropic.
 
 ### Changed
 
