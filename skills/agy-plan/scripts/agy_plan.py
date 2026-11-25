@@ -28,6 +28,9 @@ READ_ONLY_DENY = ["write_file(*)", "command(*)", "mcp(*)"]
 # agy's read_file rules match exact paths and directories but not globs (tested with agy
 # 1.5.17), so every secrets file found in the project gets a rule of its own.
 ENV_TEMPLATES = {".env.example", ".env.sample", ".env.template", ".env.dist"}
+# direnv, npm, PyPI and netrc credentials, plus private keys and certificates.
+SECRET_NAMES = {".env", ".envrc", ".npmrc", ".pypirc", ".netrc"}
+SECRET_SUFFIXES = (".pem", ".key")
 SKIPPED_DIRS = {".git", "node_modules"}
 
 # agy reports SUCCESS even when a denied tool call cut the turn short, so a run only
@@ -54,13 +57,18 @@ class PlanError(Exception):
         self.conversation_id = conversation_id
 
 
-def find_env_files(project):
-    """Return the project's .env files, such as .env and backend/.env.local, but not templates like .env.example."""
+def is_secret_file(name):
+    if name in ENV_TEMPLATES:
+        return False
+    return name in SECRET_NAMES or name.startswith(".env.") or name.endswith(SECRET_SUFFIXES)
+
+
+def find_secret_files(project):
+    """Return the project's secrets files, such as backend/.env.local or .envrc, but not templates like .env.example."""
     found = []
     for root, dirs, files in os.walk(project):
         dirs[:] = [d for d in dirs if d not in SKIPPED_DIRS]
-        found += [Path(root, name).relative_to(project).as_posix() for name in files
-                  if (name == ".env" or name.startswith(".env.")) and name not in ENV_TEMPLATES]
+        found += [Path(root, name).relative_to(project).as_posix() for name in files if is_secret_file(name)]
     return sorted(found)
 
 
@@ -113,7 +121,7 @@ def plan_session(prompt, project, model, timeout, conversation_id=None):
     """Run agy until it delivers a complete plan, resuming a cut-off turn up to MAX_RETRIES times."""
     usage, denied, total_seconds = {}, [], 0.0
     # Found once, so retries of the same session block the same files.
-    blocked_files = find_env_files(project)
+    blocked_files = find_secret_files(project)
     settings = read_only_settings(blocked_files)
     for attempt in range(1, MAX_RETRIES + 2):
         result = run_agy(prompt, project, model, timeout, settings, conversation_id)
