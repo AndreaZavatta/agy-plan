@@ -102,6 +102,13 @@ The skill only runs when you invoke it: Claude cannot trigger it on its own, bec
 
 Add `.agy-plans/` to your project's `.gitignore` if you don't want to version the plans.
 
+### Project instructions (CLAUDE.md)
+
+The skill works alongside your project's instructions:
+
+- **Claude** keeps following `CLAUDE.md` throughout. Steps it requires before a change, such as reading a ticket or creating a branch, happen before planning, and its rules on workflow, branches, commits and verification commands take precedence over the plan. The approval step is the exception: Claude always waits for your approval, even if `CLAUDE.md` says to start implementing right away.
+- **Gemini** reads the project's convention files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`) and follows their conventions for code, tests and tooling, but leaves workflow steps to Claude. It cannot see your conversation or use MCP servers, so Claude writes into the task anything it needs from outside the repository, such as the contents of a ticket.
+
 ### Configuration
 
 | Setting | How | Default |

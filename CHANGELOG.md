@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Project instructions such as `CLAUDE.md` take precedence over the plan on workflow, branches, commits, tickets and verification commands, and their preliminary steps run before planning.
+- Claude commits as the project instructions say, instead of never committing unless asked; without such instructions the old behavior stays.
+- The approval step stays mandatory even when project instructions say to start implementing right away.
+- Claude writes context Gemini cannot reach, such as ticket contents from MCP servers, into the task.
+- Gemini reads the project's convention files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTRIBUTING.md`) and uses their conventions and commands in the plan.
+
 ## [1.0.0] - 2026-11-25
 
 ### Added
