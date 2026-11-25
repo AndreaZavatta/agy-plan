@@ -8,11 +8,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.13"]
+    # The official images keep Python versions that the runner images have dropped.
+    container: python:${{ matrix.python-version }}-slim
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      # The worktree test runs git init.
+      - run: apt-get update -qq && apt-get install -y -qq git >/dev/null
       - run: python -m unittest discover -s tests -v
